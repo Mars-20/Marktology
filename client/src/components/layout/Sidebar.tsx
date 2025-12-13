@@ -1,4 +1,4 @@
-import { Plus, Search, Calendar, Users, FileText, Settings, Bell, LogOut, LayoutDashboard, Stethoscope } from "lucide-react";
+import { Plus, Search, Calendar, Users, FileText, Settings, Bell, LogOut, LayoutDashboard, Stethoscope, Activity, ArrowRightLeft } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,9 @@ export function Sidebar() {
     { name: "Patients", href: "/patients", icon: Users },
     { name: "Appointments", href: "/appointments", icon: Calendar },
     { name: "Consultations", href: "/consultations", icon: Stethoscope },
+    { name: "Referrals", href: "/referrals", icon: ArrowRightLeft },
     { name: "Reports", href: "/reports", icon: FileText },
+    { name: "Notifications", href: "/notifications", icon: Bell },
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
