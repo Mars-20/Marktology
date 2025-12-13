@@ -1,4 +1,5 @@
-import { Plus, Search, Calendar, Users, FileText, Settings, Bell, LogOut, LayoutDashboard, Stethoscope, Activity, ArrowRightLeft } from "lucide-react";
+import { useState } from "react";
+import { Plus, Search, Calendar, Users, FileText, Settings, Bell, LogOut, LayoutDashboard, Stethoscope, Activity, ArrowRightLeft, UserCog } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -6,16 +7,17 @@ import logoUrl from "@assets/generated_images/minimalist_medical_cross_logo_with
 
 export function Sidebar() {
   const [location] = useLocation();
+  const [role, setRole] = useState<"Doctor" | "Nurse">("Doctor");
 
   const links = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Patients", href: "/patients", icon: Users },
-    { name: "Appointments", href: "/appointments", icon: Calendar },
-    { name: "Consultations", href: "/consultations", icon: Stethoscope },
-    { name: "Referrals", href: "/referrals", icon: ArrowRightLeft },
-    { name: "Reports", href: "/reports", icon: FileText },
-    { name: "Notifications", href: "/notifications", icon: Bell },
-    { name: "Settings", href: "/settings", icon: Settings },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["Doctor", "Nurse"] },
+    { name: "Patients", href: "/patients", icon: Users, roles: ["Doctor", "Nurse"] },
+    { name: "Appointments", href: "/appointments", icon: Calendar, roles: ["Doctor", "Nurse"] },
+    { name: "Consultations", href: "/consultations", icon: Stethoscope, roles: ["Doctor"] },
+    { name: "Referrals", href: "/referrals", icon: ArrowRightLeft, roles: ["Doctor"] },
+    { name: "Reports", href: "/reports", icon: FileText, roles: ["Doctor"] },
+    { name: "Notifications", href: "/notifications", icon: Bell, roles: ["Doctor", "Nurse"] },
+    { name: "Settings", href: "/settings", icon: Settings, roles: ["Doctor"] },
   ];
 
   return (
@@ -26,9 +28,25 @@ export function Sidebar() {
           <span>SmartCare</span>
         </div>
       </div>
+      
+      <div className="px-4 pt-4">
+        <div className="flex items-center justify-between rounded-lg bg-muted p-2">
+          <span className="text-xs font-medium text-muted-foreground uppercase">View As</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 text-xs"
+            onClick={() => setRole(role === "Doctor" ? "Nurse" : "Doctor")}
+          >
+            <UserCog className="mr-1 h-3 w-3" />
+            {role}
+          </Button>
+        </div>
+      </div>
+
       <div className="flex-1 overflow-auto py-4">
         <nav className="grid items-start px-4 text-sm font-medium">
-          {links.map((link) => {
+          {links.filter(l => l.roles.includes(role)).map((link) => {
             const Icon = link.icon;
             const isActive = location === link.href || location.startsWith(`${link.href}/`);
             return (
@@ -52,11 +70,11 @@ export function Sidebar() {
       <div className="border-t p-4">
         <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3 mb-2">
           <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-            DR
+            {role === "Doctor" ? "DR" : "NR"}
           </div>
           <div className="flex flex-col overflow-hidden">
-            <span className="truncate text-sm font-medium">Dr. Sarah Smith</span>
-            <span className="truncate text-xs text-muted-foreground">Cardiologist</span>
+            <span className="truncate text-sm font-medium">{role === "Doctor" ? "Dr. Sarah Smith" : "Nurse John"}</span>
+            <span className="truncate text-xs text-muted-foreground">{role === "Doctor" ? "Cardiologist" : "Head Nurse"}</span>
           </div>
         </div>
         <Link href="/">

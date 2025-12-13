@@ -51,6 +51,9 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
 }
 
 :root {
@@ -101,9 +104,6 @@
   --sidebar-accent-foreground: 185 65% 30%;
   --sidebar-border: 220 13% 91%;
   --sidebar-ring: 217 91% 60%;
-  
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Plus Jakarta Sans', sans-serif;
 }
 
 .dark {

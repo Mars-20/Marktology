@@ -87,7 +87,7 @@ export default function Login() {
               <CardFooter className="flex flex-col gap-4">
                 <Button className="w-full" variant="outline">Login as Admin</Button>
                 <div className="text-center text-sm text-muted-foreground">
-                  New clinic? <a href="#" className="text-primary hover:underline">Register here</a>
+                  New clinic? <Link href="/register-clinic"><a className="text-primary hover:underline">Register here</a></Link>
                 </div>
               </CardFooter>
             </Card>

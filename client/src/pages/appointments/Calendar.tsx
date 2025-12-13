@@ -143,9 +143,16 @@ export default function Appointments() {
                                 <span>with {apt.doctor}</span>
                               </div>
                            </div>
-                           <Badge variant={apt.status === "Completed" ? "secondary" : "default"}>
-                              {apt.status}
-                           </Badge>
+                           <div className="flex items-center gap-2">
+                             {apt.status === "Scheduled" && (
+                                <Button size="sm" variant="secondary" className="h-6 text-xs px-2">
+                                  Mark Attendance
+                                </Button>
+                             )}
+                             <Badge variant={apt.status === "Completed" ? "secondary" : "default"}>
+                                {apt.status}
+                             </Badge>
+                           </div>
                         </div>
                       ) : (
                          <div className="h-full w-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
