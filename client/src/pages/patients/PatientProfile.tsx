@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MOCK_PATIENTS } from "@/lib/mockData";
-import { ArrowLeft, Calendar, FileText, Activity, Phone, Mail, MapPin, Edit, Clock, Stethoscope, Share2 } from "lucide-react";
+import { ArrowLeft, Calendar, FileText, Activity, Phone, Mail, MapPin, Edit, Clock, Stethoscope, Share2, Upload, File } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 export default function PatientProfile() {
   const [, params] = useRoute("/patients/:id");
@@ -36,6 +37,48 @@ export default function PatientProfile() {
             </div>
           </div>
           <div className="ml-auto flex gap-2">
+            <Dialog>
+               <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Profile
+                  </Button>
+               </DialogTrigger>
+               <DialogContent>
+                 <DialogHeader>
+                   <DialogTitle>Edit Patient Profile</DialogTitle>
+                   <DialogDescription>Update personal information.</DialogDescription>
+                 </DialogHeader>
+                 <div className="grid gap-4 py-4">
+                   <div className="grid gap-2">
+                     <Label>Name</Label>
+                     <Input defaultValue={patient.name} />
+                   </div>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Phone</Label>
+                        <Input defaultValue={patient.phone} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Status</Label>
+                        <Select defaultValue={patient.status === "Active" ? "active" : "inactive"}>
+                           <SelectTrigger>
+                             <SelectValue />
+                           </SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="active">Active</SelectItem>
+                             <SelectItem value="inactive">Inactive</SelectItem>
+                           </SelectContent>
+                        </Select>
+                      </div>
+                   </div>
+                 </div>
+                 <DialogFooter>
+                   <Button type="submit">Save Changes</Button>
+                 </DialogFooter>
+               </DialogContent>
+            </Dialog>
+
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -244,6 +287,38 @@ export default function PatientProfile() {
                       </div>
                     </div>
                   </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="files" className="mt-6">
+                <Card>
+                   <CardHeader className="flex flex-row items-center justify-between">
+                     <CardTitle>Medical Files</CardTitle>
+                     <Button size="sm" variant="outline">
+                        <Upload className="mr-2 h-4 w-4" /> Upload
+                     </Button>
+                   </CardHeader>
+                   <CardContent>
+                      <div className="space-y-2">
+                        {[
+                          { name: "Blood Test Results.pdf", date: "Oct 15, 2023", size: "1.2 MB" },
+                          { name: "Chest X-Ray.png", date: "Sep 01, 2023", size: "4.5 MB" }
+                        ].map((file, i) => (
+                          <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                             <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 bg-primary/10 rounded flex items-center justify-center text-primary">
+                                  <File className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">{file.name}</p>
+                                  <p className="text-xs text-muted-foreground">{file.date} &middot; {file.size}</p>
+                                </div>
+                             </div>
+                             <Button variant="ghost" size="sm">View</Button>
+                          </div>
+                        ))}
+                      </div>
+                   </CardContent>
                 </Card>
               </TabsContent>
 

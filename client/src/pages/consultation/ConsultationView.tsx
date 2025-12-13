@@ -6,15 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MOCK_PATIENTS } from "@/lib/mockData";
-import { ArrowLeft, Save, Printer, History } from "lucide-react";
+import { ArrowLeft, Save, Printer, History, CheckCircle2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function ConsultationView() {
   const [, setLocation] = useLocation();
   const patient = MOCK_PATIENTS[0]; // Mocking the first patient
   const [activeTab, setActiveTab] = useState("consultation");
+  const [showFinishDialog, setShowFinishDialog] = useState(false);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
 
   return (
     <DashboardLayout>
@@ -41,7 +44,8 @@ export default function ConsultationView() {
               <History className="mr-2 h-4 w-4" />
               History
             </Button>
-            <Button onClick={() => setLocation("/dashboard")}>
+            
+            <Button onClick={() => setShowFinishDialog(true)}>
               <Save className="mr-2 h-4 w-4" />
               Finish & Save
             </Button>
@@ -111,7 +115,7 @@ export default function ConsultationView() {
             <Card className="flex-1">
               <CardHeader className="py-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm">Treatment Plan & Prescription</CardTitle>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => setShowPrintDialog(true)}>
                   <Printer className="h-4 w-4 mr-2" />
                   Print Rx
                 </Button>
@@ -170,6 +174,80 @@ export default function ConsultationView() {
           </div>
         </div>
       </div>
+
+      {/* Finish Consultation Dialog */}
+      <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
+        <DialogContent>
+           <DialogHeader>
+             <DialogTitle>Finish Consultation</DialogTitle>
+             <DialogDescription>
+               Are you sure you want to finalize this visit? This will save the record and update the patient's history.
+             </DialogDescription>
+           </DialogHeader>
+           <div className="bg-muted/30 p-4 rounded-lg space-y-2 text-sm">
+             <div className="flex justify-between">
+               <span className="text-muted-foreground">Patient:</span>
+               <span className="font-medium">{patient.name}</span>
+             </div>
+             <div className="flex justify-between">
+               <span className="text-muted-foreground">Diagnosis:</span>
+               <span className="font-medium">Acute Bronchitis</span>
+             </div>
+             <div className="flex justify-between">
+               <span className="text-muted-foreground">Prescription:</span>
+               <span className="font-medium">1 Item</span>
+             </div>
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={() => setShowFinishDialog(false)}>Cancel</Button>
+             <Button onClick={() => setLocation("/dashboard")}>Confirm & Save</Button>
+           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Print Preview Dialog */}
+      <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+         <DialogContent className="max-w-[600px]">
+           <div className="border p-8 bg-white text-black space-y-6">
+              <div className="flex justify-between items-center border-b pb-4">
+                 <div>
+                   <h1 className="text-xl font-bold">SmartCare Clinic</h1>
+                   <p className="text-sm text-gray-500">Dr. Sarah Smith</p>
+                 </div>
+                 <div className="text-right text-sm">
+                   <p>Date: {new Date().toLocaleDateString()}</p>
+                   <p>Rx ID: #88392</p>
+                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                 <h3 className="font-bold border-b w-full pb-1 mb-2">Patient Details</h3>
+                 <p>Name: {patient.name}</p>
+                 <p>Age: {patient.age} years</p>
+              </div>
+
+              <div className="space-y-4 min-h-[200px]">
+                 <h3 className="font-bold text-xl">Rx</h3>
+                 <div className="ml-4">
+                    <p className="font-bold">Augmentin 1g</p>
+                    <p className="text-sm">1 tablet every 12 hours for 7 days</p>
+                 </div>
+              </div>
+
+               <div className="pt-8 border-t flex justify-between items-end">
+                 <div className="text-xs text-gray-400">
+                   Generated by SmartCare Systems
+                 </div>
+                 <div className="border-t border-black w-40 text-center pt-1">
+                   Doctor's Signature
+                 </div>
+               </div>
+           </div>
+           <DialogFooter>
+             <Button onClick={() => window.print()}>Print Now</Button>
+           </DialogFooter>
+         </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
