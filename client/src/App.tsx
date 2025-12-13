@@ -15,12 +15,14 @@ import Referrals from "@/pages/referrals/Referrals";
 import Reports from "@/pages/reports/Reports";
 import Settings from "@/pages/settings/Settings";
 import RegisterClinic from "@/pages/auth/RegisterClinic";
+import SystemAdminDashboard from "@/pages/admin/SystemAdminDashboard";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Login} />
       <Route path="/register-clinic" component={RegisterClinic} />
+      <Route path="/admin-dashboard" component={SystemAdminDashboard} />
       <Route path="/dashboard" component={DoctorDashboard} />
       <Route path="/patients" component={PatientList} />
       <Route path="/patients/:id" component={PatientProfile} />

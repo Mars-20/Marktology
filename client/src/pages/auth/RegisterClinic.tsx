@@ -4,13 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Copy } from "lucide-react";
 import logoUrl from "@assets/generated_images/minimalist_medical_cross_logo_with_clean_lines.png";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterClinic() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [clinicId, setClinicId] = useState("");
+  const { toast } = useToast();
+
+  const generateClinicId = () => {
+    return "CL-" + Math.floor(10000 + Math.random() * 90000);
+  };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,8 +25,17 @@ export default function RegisterClinic() {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
+      setClinicId(generateClinicId());
       setStep(3); // Success state
     }, 1500);
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(clinicId);
+    toast({
+      title: "Copied!",
+      description: "Clinic ID copied to clipboard.",
+    });
   };
 
   return (
@@ -29,15 +45,15 @@ export default function RegisterClinic() {
           <div className="rounded-xl bg-primary/10 p-4 mb-4">
              <img src={logoUrl} alt="SmartCare Logo" className="h-16 w-16 object-contain" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Register Clinic</h1>
-          <p className="text-muted-foreground mt-2">Join thousands of clinics using SmartCare.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Register New Clinic</h1>
+          <p className="text-muted-foreground mt-2">Join SmartCare and manage your practice efficiently.</p>
         </div>
 
         {step === 1 && (
           <Card className="border-none shadow-lg animate-in fade-in slide-in-from-bottom-4">
             <CardHeader>
               <CardTitle>Clinic Details</CardTitle>
-              <CardDescription>Tell us about your practice.</CardDescription>
+              <CardDescription>Enter the basic information for the new clinic.</CardDescription>
             </CardHeader>
             <form onSubmit={(e) => { e.preventDefault(); setStep(2); }}>
               <CardContent className="space-y-4">
@@ -64,8 +80,8 @@ export default function RegisterClinic() {
         {step === 2 && (
           <Card className="border-none shadow-lg animate-in fade-in slide-in-from-right-4">
             <CardHeader>
-              <CardTitle>Owner Information</CardTitle>
-              <CardDescription>Create your admin account.</CardDescription>
+              <CardTitle>Admin & Access</CardTitle>
+              <CardDescription>Set up the main administrator account.</CardDescription>
             </CardHeader>
             <form onSubmit={handleRegister}>
               <CardContent className="space-y-4">
@@ -80,7 +96,7 @@ export default function RegisterClinic() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Work Email</Label>
+                  <Label htmlFor="email">Admin Email</Label>
                   <Input id="email" type="email" placeholder="admin@clinic.com" required />
                 </div>
                 <div className="space-y-2">
@@ -91,7 +107,7 @@ export default function RegisterClinic() {
               <CardFooter className="flex gap-2">
                 <Button variant="outline" type="button" onClick={() => setStep(1)}>Back</Button>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating Account..." : "Complete Registration"}
+                  {isLoading ? "Creating Clinic..." : "Complete Registration"}
                 </Button>
               </CardFooter>
             </form>
@@ -100,23 +116,34 @@ export default function RegisterClinic() {
 
         {step === 3 && (
           <Card className="border-none shadow-lg animate-in zoom-in-95">
-            <CardContent className="pt-6 text-center space-y-4">
+            <CardContent className="pt-6 text-center space-y-6">
               <div className="mx-auto h-16 w-16 rounded-full bg-green-100 flex items-center justify-center text-green-600">
                 <CheckCircle2 className="h-8 w-8" />
               </div>
               <div>
-                <CardTitle className="text-xl">Registration Successful!</CardTitle>
+                <CardTitle className="text-xl">Clinic Registered Successfully!</CardTitle>
                 <CardDescription className="mt-2">
-                  Your clinic account has been created. You can now login to your dashboard.
+                  The clinic has been added to the system. Please save the <strong>Clinic ID</strong> below for login.
                 </CardDescription>
               </div>
-              <Button className="w-full" onClick={() => setLocation("/")}>Go to Login</Button>
+              
+              <div className="flex items-center gap-2 p-4 bg-muted rounded-lg border border-dashed">
+                <code className="flex-1 text-lg font-mono font-bold text-primary tracking-wider">{clinicId}</code>
+                <Button size="icon" variant="ghost" onClick={copyToClipboard}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Button className="w-full" onClick={() => setLocation("/")}>Go to Login</Button>
+                <Button variant="ghost" className="w-full" onClick={() => setLocation("/admin-dashboard")}>Back to System Admin</Button>
+              </div>
             </CardContent>
           </Card>
         )}
 
         <div className="text-center text-sm text-muted-foreground">
-          Already have an account? <Link href="/"><a className="text-primary hover:underline">Sign in</a></Link>
+          <Link href="/"><a className="text-primary hover:underline">Back to Login</a></Link>
         </div>
       </div>
     </div>

@@ -29,7 +29,12 @@ export function Sidebar() {
         </div>
       </div>
       
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-4 space-y-2">
+        <div className="flex items-center justify-between rounded-lg bg-muted p-2">
+          <span className="text-xs font-medium text-muted-foreground uppercase">Clinic ID</span>
+          <Badge variant="outline" className="font-mono text-xs bg-background">CL-8392</Badge>
+        </div>
+        
         <div className="flex items-center justify-between rounded-lg bg-muted p-2">
           <span className="text-xs font-medium text-muted-foreground uppercase">View As</span>
           <Button 
