@@ -1,0 +1,150 @@
+Product Requirements Document (PRD)
+Product Name: SmartCare Clinics
+1. Overview
+
+SmartCare Clinics هو نظام رقمي لإدارة العيادات وإنشاء تجربة علاجية أكثر جودة من خلال إدارة السجلات الطبية، مواعيد المرضى، التشخيص، العلاج، والمتابعة اللاحقة.
+
+2. User Personas
+1. الطبيب (Primary User)
+
+هدفه: إدارة مرضاه ومواعيده بسهولة، وتسجيل التشخيصات، ومتابعة تطور الحالة.
+
+احتياجاته: سرعة – بساطة – سجل واضح – تاريخ علاجي موحد – تنبيهات متابعة.
+
+2. الممرض/الموظف (Secondary User)
+
+هدفه: تسجيل المرضى ومتابعة مواعيدهم وإدخال البيانات الأساسية.
+
+احتياجاته: واجهة بسيطة – عدم ظهور بيانات حساسة.
+
+3. مدير النظام (Admin)
+
+هدفه: إدارة العيادات – مراقبة الاستخدام – تفعيل الحسابات.
+
+3. User Stories
+تسجيل العيادات
+
+As Admin, I can register clinics and assign owners.
+
+As Clinic Owner, I can activate my account and access the clinic dashboard.
+
+إدارة المرضى
+
+As Nurse/Doctor, I can add a new patient with personal & medical history.
+
+As Doctor, I can open any patient profile and view full history.
+
+إدارة المواعيد
+
+As Nurse, I can create/modify/delete appointments.
+
+As Doctor, I can mark attendance and initiate consultation.
+
+الكشف الطبي
+
+As Doctor, I can record diagnosis, prescription, treatment plan.
+
+System saves all consultation records in the clinic database.
+
+The data appears instantly on the doctor dashboard.
+
+المتابعة العلاجية
+
+As Doctor/Nurse, I can receive alerts when a follow-up is due.
+
+System sends automated reminders internally.
+
+تحويل الحالات
+
+As Doctor, I can refer a patient to another doctor.
+
+System logs and notifies the target doctor.
+
+4. Functional Requirements
+Clinic System
+
+Create clinic
+
+Activate clinic
+
+Assign doctor roles
+
+Add users (nurses)
+
+Patient Management
+
+Add/Edit/Delete patients
+
+Medical history
+
+Visit history
+
+Prescriptions
+
+Files & attachments
+
+Appointment Management
+
+Calendar view
+
+Attendance marking
+
+Daily schedule
+
+Consultation Module
+
+Diagnosis
+
+Treatment plan
+
+Notes
+
+Follow-up duration input
+
+Auto-follow-up reminder
+
+Alerts Engine
+
+Cron-based daily reminders
+
+Queue of pending follow-ups
+
+Referral System
+
+Create referral
+
+Accept/Reject referral
+
+Transfer patient data summary
+
+5. Non-Functional Requirements
+
+Security: تشفير بيانات المرضى – HIPAA-inspired.
+
+Scalability: قابل للتوسع لدعم آلاف المرضى.
+
+Performance: فتح السجل الطبي < 1.5 ثانية.
+
+Availability: 99.9%
+
+Backup: نسخة احتياطية يومية.
+
+6. Technical Stack Proposal
+
+Frontend: Flutter Web + Flutter Mobile
+
+Backend: Node.js / NestJS
+
+Database: PostgreSQL
+
+Authentication: OAuth2 / JWT
+
+Notifications: Cron Jobs + SMS/WhatsApp API (future)
+
+7. Success Metrics
+
+تقليل وقت تسجيل الزيارة بنسبة 40%
+
+زيادة عدد المتابعات الناجحة بنسبة 60%
+
+تقليل فقدان الحالات بعد الزيارة بنسبة 50%
