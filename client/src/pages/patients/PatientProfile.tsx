@@ -3,21 +3,100 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MOCK_PATIENTS } from "@/lib/mockData";
-import { ArrowLeft, Calendar, FileText, Activity, Phone, Mail, MapPin, Edit, Clock, Stethoscope, Share2, Upload, File } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, Edit, Stethoscope, Share2 } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { usePatient, useUpdatePatient } from "@/hooks/usePatients";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { ErrorMessage } from "@/components/ErrorMessage";
+import { useState } from "react";
+import { format, differenceInYears } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+
+function getAvatarColor(name: string) {
+  const colors = [
+    "bg-blue-100 text-blue-700",
+    "bg-pink-100 text-pink-700",
+    "bg-green-100 text-green-700",
+    "bg-purple-100 text-purple-700",
+    "bg-yellow-100 text-yellow-700",
+    "bg-red-100 text-red-700",
+    "bg-indigo-100 text-indigo-700",
+  ];
+  const index = name.charCodeAt(0) % colors.length;
+  return colors[index];
+}
 
 export default function PatientProfile() {
   const [, params] = useRoute("/patients/:id");
-  const id = params?.id;
+  const id = params?.id || '';
+  const { toast } = useToast();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
-  // In a real app, we'd fetch based on ID. For now, just grab the first one or find by ID if we had a real store.
-  const patient = MOCK_PATIENTS.find(p => p.id === id) || MOCK_PATIENTS[0];
+  const { data: patientData, isLoading, error } = usePatient(id);
+  const updatePatient = useUpdatePatient();
+
+  const [editFormData, setEditFormData] = useState({
+    full_name: "",
+    phone: "",
+    email: "",
+    address: "",
+  });
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <LoadingSpinner />
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !patientData) {
+    return (
+      <DashboardLayout>
+        <ErrorMessage error={error || new Error("Patient not found")} />
+      </DashboardLayout>
+    );
+  }
+
+  const patient = patientData.patient;
+  const recentAppointments = patientData.recent_appointments || [];
+  const recentConsultations = patientData.recent_consultations || [];
+  const age = differenceInYears(new Date(), new Date(patient.date_of_birth));
+
+  const handleEditClick = () => {
+    setEditFormData({
+      full_name: patient.full_name,
+      phone: patient.phone,
+      email: patient.email || "",
+      address: patient.address,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updatePatient.mutateAsync({
+        id: patient.id,
+        data: editFormData,
+      });
+      toast({
+        title: "Success",
+        description: "Patient profile updated successfully",
+      });
+      setIsEditDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update patient",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -29,53 +108,64 @@ export default function PatientProfile() {
             </Button>
           </Link>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">{patient.name}</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{patient.full_name}</h2>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Badge variant="outline">ID: {patient.id}</Badge>
+              <Badge variant="outline">ID: {patient.file_number}</Badge>
               <span>&middot;</span>
-              <span>{patient.age} Years, {patient.gender}</span>
+              <span>{age} Years, {patient.gender}</span>
             </div>
           </div>
           <div className="ml-auto flex gap-2">
-            <Dialog>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                <DialogTrigger asChild>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={handleEditClick}>
                     <Edit className="mr-2 h-4 w-4" />
                     Edit Profile
                   </Button>
                </DialogTrigger>
                <DialogContent>
-                 <DialogHeader>
-                   <DialogTitle>Edit Patient Profile</DialogTitle>
-                   <DialogDescription>Update personal information.</DialogDescription>
-                 </DialogHeader>
-                 <div className="grid gap-4 py-4">
-                   <div className="grid gap-2">
-                     <Label>Name</Label>
-                     <Input defaultValue={patient.name} />
+                 <form onSubmit={handleEditSubmit}>
+                   <DialogHeader>
+                     <DialogTitle>Edit Patient Profile</DialogTitle>
+                     <DialogDescription>Update personal information.</DialogDescription>
+                   </DialogHeader>
+                   <div className="grid gap-4 py-4">
+                     <div className="grid gap-2">
+                       <Label>Full Name</Label>
+                       <Input
+                         value={editFormData.full_name}
+                         onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                       />
+                     </div>
+                     <div className="grid gap-2">
+                       <Label>Phone</Label>
+                       <Input
+                         value={editFormData.phone}
+                         onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                       />
+                     </div>
+                     <div className="grid gap-2">
+                       <Label>Email</Label>
+                       <Input
+                         type="email"
+                         value={editFormData.email}
+                         onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                       />
+                     </div>
+                     <div className="grid gap-2">
+                       <Label>Address</Label>
+                       <Input
+                         value={editFormData.address}
+                         onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                       />
+                     </div>
                    </div>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label>Phone</Label>
-                        <Input defaultValue={patient.phone} />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Status</Label>
-                        <Select defaultValue={patient.status === "Active" ? "active" : "inactive"}>
-                           <SelectTrigger>
-                             <SelectValue />
-                           </SelectTrigger>
-                           <SelectContent>
-                             <SelectItem value="active">Active</SelectItem>
-                             <SelectItem value="inactive">Inactive</SelectItem>
-                           </SelectContent>
-                        </Select>
-                      </div>
-                   </div>
-                 </div>
-                 <DialogFooter>
-                   <Button type="submit">Save Changes</Button>
-                 </DialogFooter>
+                   <DialogFooter>
+                     <Button type="submit" disabled={updatePatient.isPending}>
+                       {updatePatient.isPending ? "Saving..." : "Save Changes"}
+                     </Button>
+                   </DialogFooter>
+                 </form>
                </DialogContent>
             </Dialog>
 
@@ -93,32 +183,11 @@ export default function PatientProfile() {
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label>Specialty</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select specialty" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cardio">Cardiology</SelectItem>
-                        <SelectItem value="derma">Dermatology</SelectItem>
-                        <SelectItem value="ortho">Orthopedics</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Referred To</Label>
+                    <Input placeholder="Specialist name or clinic" />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Doctor/Clinic</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select doctor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="dr-ali">Dr. Ali Ahmed (Cairo Clinic)</SelectItem>
-                        <SelectItem value="dr-mona">Dr. Mona Zaki (Specialist Center)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Referral Note</Label>
+                    <Label>Referral Reason</Label>
                     <Textarea placeholder="Reason for referral..." />
                   </div>
                 </div>
@@ -142,14 +211,14 @@ export default function PatientProfile() {
           <div className="md:col-span-2 space-y-6">
             <Card>
               <CardContent className="pt-6 text-center">
-                 <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full text-2xl font-bold mb-4 ${patient.avatarColor}`}>
-                    {patient.name.split(" ").map(n => n[0]).join("")}
+                 <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full text-2xl font-bold mb-4 ${getAvatarColor(patient.full_name)}`}>
+                    {patient.full_name.substring(0, 2).toUpperCase()}
                   </div>
-                  <h3 className="font-bold text-lg">{patient.name}</h3>
-                  <p className="text-sm text-muted-foreground">{patient.condition}</p>
+                  <h3 className="font-bold text-lg">{patient.full_name}</h3>
+                  <p className="text-sm text-muted-foreground">Patient</p>
                   <div className="mt-4 flex justify-center">
-                    <Badge variant={patient.status === "Active" ? "default" : "secondary"}>
-                        {patient.status}
+                    <Badge variant="default">
+                        Active
                     </Badge>
                   </div>
               </CardContent>
@@ -164,33 +233,27 @@ export default function PatientProfile() {
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <span>{patient.phone}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>email@example.com</span>
-                </div>
+                {patient.email && (
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span>{patient.email}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-3">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>Cairo, Egypt</span>
+                  <span>{patient.address}</span>
                 </div>
               </CardContent>
             </Card>
 
-             <Card>
+            <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Vitals (Last Visit)</CardTitle>
+                <CardTitle className="text-sm">Emergency Contact</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Blood Pressure</span>
-                  <span className="font-medium">120/80</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Heart Rate</span>
-                  <span className="font-medium">72 bpm</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Weight</span>
-                  <span className="font-medium">75 kg</span>
+              <CardContent className="space-y-2 text-sm">
+                <div>
+                  <p className="font-medium">Not specified</p>
+                  <p className="text-muted-foreground">-</p>
                 </div>
               </CardContent>
             </Card>
@@ -201,125 +264,120 @@ export default function PatientProfile() {
             <Tabs defaultValue="history" className="w-full">
               <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
                 <TabsTrigger value="history" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3">Medical History</TabsTrigger>
-                <TabsTrigger value="visits" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3">Visits & Notes</TabsTrigger>
-                <TabsTrigger value="medications" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3">Medications</TabsTrigger>
-                <TabsTrigger value="files" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3">Files</TabsTrigger>
+                <TabsTrigger value="visits" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3">Visits & Consultations</TabsTrigger>
+                <TabsTrigger value="appointments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3">Appointments</TabsTrigger>
               </TabsList>
               
               <TabsContent value="history" className="mt-6 space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Chronic Conditions</CardTitle>
+                    <CardTitle>Patient Information</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <span>Hypertension</span>
-                        <Badge variant="outline">Since 2020</Badge>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Date of Birth</p>
+                        <p className="font-medium">{format(new Date(patient.date_of_birth), "MMM dd, yyyy")}</p>
                       </div>
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <span>Type 2 Diabetes</span>
-                        <Badge variant="outline">Since 2018</Badge>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Blood Type</p>
+                        <p className="font-medium">{patient.blood_type || "Not specified"}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
-                    <CardTitle>Allergies</CardTitle>
+                    <CardTitle>Medical Notes</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex gap-2">
-                      <Badge variant="destructive">Penicillin</Badge>
-                      <Badge variant="destructive">Peanuts</Badge>
-                    </div>
+                    <p className="text-sm text-muted-foreground">No additional medical information recorded</p>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               <TabsContent value="visits" className="mt-6">
                 <div className="space-y-4">
-                  {[1, 2].map((i) => (
-                    <Card key={i}>
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-base">Consultation - Dr. Sarah Smith</CardTitle>
-                            <CardDescription>Oct 15, 2023 &middot; 10:30 AM</CardDescription>
-                          </div>
-                          <Button variant="ghost" size="sm">View Details</Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                          Patient complained of headaches and dizziness. BP elevated. Adjusted medication dosage and recommended low sodium diet.
-                        </p>
-                        <div className="mt-4 flex gap-2">
-                           <Badge variant="secondary">Follow-up Required</Badge>
-                        </div>
+                  {recentConsultations.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-8 text-center text-muted-foreground">
+                        No consultations recorded yet
                       </CardContent>
                     </Card>
-                  ))}
+                  ) : (
+                    recentConsultations.map((consultation: any) => (
+                      <Card key={consultation.id}>
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-base">Consultation</CardTitle>
+                              <CardDescription>
+                                {format(new Date(consultation.created_at), "MMM dd, yyyy 'at' h:mm a")}
+                              </CardDescription>
+                            </div>
+                            <Link href={`/consultations/${consultation.id}`}>
+                              <Button variant="ghost" size="sm">View Details</Button>
+                            </Link>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-sm font-medium">Chief Complaint:</p>
+                              <p className="text-sm text-muted-foreground">{consultation.chief_complaint}</p>
+                            </div>
+                            {consultation.diagnosis && (
+                              <div>
+                                <p className="text-sm font-medium">Diagnosis:</p>
+                                <p className="text-sm text-muted-foreground">{consultation.diagnosis}</p>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </TabsContent>
               
-               <TabsContent value="medications" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Active Prescriptions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between border-b pb-4">
-                        <div>
-                          <p className="font-medium">Lisinopril 10mg</p>
-                          <p className="text-sm text-muted-foreground">1 tablet daily in the morning</p>
-                        </div>
-                        <Badge>Active</Badge>
-                      </div>
-                       <div className="flex items-center justify-between border-b pb-4">
-                        <div>
-                          <p className="font-medium">Metformin 500mg</p>
-                          <p className="text-sm text-muted-foreground">1 tablet twice daily with meals</p>
-                        </div>
-                        <Badge>Active</Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="files" className="mt-6">
-                <Card>
-                   <CardHeader className="flex flex-row items-center justify-between">
-                     <CardTitle>Medical Files</CardTitle>
-                     <Button size="sm" variant="outline">
-                        <Upload className="mr-2 h-4 w-4" /> Upload
-                     </Button>
-                   </CardHeader>
-                   <CardContent>
-                      <div className="space-y-2">
-                        {[
-                          { name: "Blood Test Results.pdf", date: "Oct 15, 2023", size: "1.2 MB" },
-                          { name: "Chest X-Ray.png", date: "Sep 01, 2023", size: "4.5 MB" }
-                        ].map((file, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                             <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 bg-primary/10 rounded flex items-center justify-center text-primary">
-                                  <File className="h-5 w-5" />
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm">{file.name}</p>
-                                  <p className="text-xs text-muted-foreground">{file.date} &middot; {file.size}</p>
-                                </div>
-                             </div>
-                             <Button variant="ghost" size="sm">View</Button>
+              <TabsContent value="appointments" className="mt-6">
+                <div className="space-y-4">
+                  {recentAppointments.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-8 text-center text-muted-foreground">
+                        No appointments scheduled
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    recentAppointments.map((appointment: any) => (
+                      <Card key={appointment.id}>
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-base">{appointment.type}</CardTitle>
+                              <CardDescription>
+                                {format(new Date(appointment.appointment_date), "MMM dd, yyyy")} at {appointment.appointment_time}
+                              </CardDescription>
+                            </div>
+                            <Badge variant={
+                              appointment.status === "completed" ? "secondary" :
+                              appointment.status === "in_progress" ? "default" :
+                              "outline"
+                            }>
+                              {appointment.status}
+                            </Badge>
                           </div>
-                        ))}
-                      </div>
-                   </CardContent>
-                </Card>
+                        </CardHeader>
+                        {appointment.notes && (
+                          <CardContent>
+                            <p className="text-sm text-muted-foreground">{appointment.notes}</p>
+                          </CardContent>
+                        )}
+                      </Card>
+                    ))
+                  )}
+                </div>
               </TabsContent>
 
             </Tabs>

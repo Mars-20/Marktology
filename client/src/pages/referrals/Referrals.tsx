@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownLeft, Check, X, FileText } from "lucide-react";
+import { Check, X, FileText } from "lucide-react";
 
 const INCOMING_REFERRALS = [
   { id: 1, patient: "Layla Mahmoud", from: "Dr. Mona Zaki", date: "2023-11-12", reason: "Cardiology Consult", status: "Pending" },

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,24 +5,39 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, ShieldCheck, LogOut, Building2, Users, Activity, ExternalLink } from "lucide-react";
-import logoUrl from "@assets/generated_images/minimalist_medical_cross_logo_with_clean_lines.png";
-
-const MOCK_CLINICS = [
-  { id: "CL-8392", name: "Cairo Medical Center", owner: "Dr. Ahmed Ali", specialty: "General", status: "Active", patients: 1240, plan: "Pro" },
-  { id: "CL-1120", name: "Al-Amal Dental", owner: "Dr. Mona Zaki", specialty: "Dental", status: "Active", patients: 850, plan: "Basic" },
-  { id: "CL-4501", name: "Kids Care Clinic", owner: "Dr. Sarah Smith", specialty: "Pediatrics", status: "Pending", patients: 0, plan: "Trial" },
-];
+import logoUrl from "@assets/marktology-logo.png";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useState } from "react";
 
 export default function SystemAdminDashboard() {
   const [, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: clinicsData, isLoading: clinicsLoading } = useQuery({
+    queryKey: ['admin-clinics'],
+    queryFn: api.admin.clinics,
+  });
+
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: api.admin.stats,
+  });
+
+  const clinics = clinicsData?.clinics || [];
+  const filteredClinics = clinics.filter((clinic) =>
+    clinic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    clinic.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-muted/20 font-sans">
       {/* Top Navigation */}
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6 shadow-sm">
         <div className="flex items-center gap-2 font-display font-bold text-xl text-primary">
-          <img src={logoUrl} alt="SmartCare Logo" className="h-8 w-8 rounded-md object-cover" />
-          <span>SmartCare <span className="text-xs font-normal text-muted-foreground ml-1 bg-muted px-2 py-0.5 rounded-full">SYSTEM ADMIN</span></span>
+          <img src={logoUrl} alt="Marktology OS Logo" className="h-8 w-8 rounded-md object-cover" />
+          <span>Marktology OS <span className="text-xs font-normal text-muted-foreground ml-1 bg-muted px-2 py-0.5 rounded-full">SYSTEM ADMIN</span></span>
         </div>
         <div className="ml-auto flex items-center gap-4">
           <div className="text-sm text-muted-foreground hidden md:block">
@@ -42,12 +56,20 @@ export default function SystemAdminDashboard() {
             <h1 className="text-3xl font-bold tracking-tight">Platform Overview</h1>
             <p className="text-muted-foreground">Manage all registered clinics and monitor system health.</p>
           </div>
-          <Link href="/register-clinic">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Plus className="mr-2 h-4 w-4" />
-              Register New Clinic
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/admin/manage-clinics">
+              <Button variant="outline">
+                <Building2 className="mr-2 h-4 w-4" />
+                Manage Clinics
+              </Button>
+            </Link>
+            <Link href="/register-clinic">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Plus className="mr-2 h-4 w-4" />
+                Register New Clinic
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
@@ -58,8 +80,14 @@ export default function SystemAdminDashboard() {
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">142</div>
-              <p className="text-xs text-muted-foreground">+4 this month</p>
+              {statsLoading ? (
+                <div className="text-2xl font-bold">...</div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stats?.total_clinics || 0}</div>
+                  <p className="text-xs text-muted-foreground">{stats?.active_clinics || 0} active</p>
+                </>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -68,8 +96,14 @@ export default function SystemAdminDashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12,543</div>
-              <p className="text-xs text-muted-foreground">Across all clinics</p>
+              {statsLoading ? (
+                <div className="text-2xl font-bold">...</div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stats?.total_patients || 0}</div>
+                  <p className="text-xs text-muted-foreground">Across all clinics</p>
+                </>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -84,12 +118,18 @@ export default function SystemAdminDashboard() {
           </Card>
            <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
               <ShieldCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$45.2k</div>
-              <p className="text-xs text-muted-foreground">Monthly Recurring</p>
+              {statsLoading ? (
+                <div className="text-2xl font-bold">...</div>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stats?.total_users || 0}</div>
+                  <p className="text-xs text-muted-foreground">Platform-wide</p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -100,50 +140,61 @@ export default function SystemAdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Registered Clinics</CardTitle>
-                <CardDescription>Directory of all medical facilities using SmartCare.</CardDescription>
+                <CardDescription>Directory of all medical facilities using Marktology OS.</CardDescription>
               </div>
               <div className="relative w-full max-w-sm">
                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                 <Input placeholder="Search clinics..." className="pl-8" />
+                 <Input 
+                   placeholder="Search clinics..." 
+                   className="pl-8" 
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                 />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Clinic ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Specialty</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {MOCK_CLINICS.map((clinic) => (
-                  <TableRow key={clinic.id}>
-                    <TableCell className="font-mono text-xs font-medium">{clinic.id}</TableCell>
-                    <TableCell className="font-medium">{clinic.name}</TableCell>
-                    <TableCell>{clinic.owner}</TableCell>
-                    <TableCell>{clinic.specialty}</TableCell>
-                    <TableCell><Badge variant="outline">{clinic.plan}</Badge></TableCell>
-                    <TableCell>
-                      <Badge variant={clinic.status === "Active" ? "default" : "secondary"}>
-                        {clinic.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => setLocation("/dashboard")}>
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Access
-                      </Button>
-                    </TableCell>
+            {clinicsLoading ? (
+              <LoadingSpinner />
+            ) : filteredClinics.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No clinics found</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Clinic ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Specialty</TableHead>
+                    <TableHead>Patients</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredClinics.map((clinic) => (
+                    <TableRow key={clinic.id}>
+                      <TableCell className="font-mono text-xs font-medium">{clinic.id}</TableCell>
+                      <TableCell className="font-medium">{clinic.name}</TableCell>
+                      <TableCell>{clinic.specialty || 'General'}</TableCell>
+                      <TableCell>{clinic.stats?.total_patients || 0}</TableCell>
+                      <TableCell>
+                        <Badge variant={clinic.status === 'active' ? "default" : "secondary"}>
+                          {clinic.status === 'active' ? 'Active' : clinic.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link href="/admin/manage-clinics">
+                          <Button variant="ghost" size="sm">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Manage
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </main>

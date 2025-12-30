@@ -4,20 +4,91 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MOCK_PATIENTS } from "@/lib/mockData";
-import { ArrowLeft, Save, Printer, History, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, Printer, History } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { usePatient } from "@/hooks/usePatients";
+import { useCreateConsultation } from "@/hooks/useConsultations";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ConsultationView() {
   const [, setLocation] = useLocation();
-  const patient = MOCK_PATIENTS[0]; // Mocking the first patient
-  const [activeTab, setActiveTab] = useState("consultation");
+  const { data: userData } = useCurrentUser();
+  const user = userData?.user;
+  const { toast } = useToast();
+  
+  // Get patient ID from query params
+  const urlParams = new URLSearchParams(window.location.search);
+  const patientId = urlParams.get('patientId') || '';
+  
+  const { data: patientData, isLoading } = usePatient(patientId);
+  const createConsultation = useCreateConsultation();
+  
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
+
+  const [formData, setFormData] = useState({
+    chief_complaint: "",
+    symptoms: "",
+    diagnosis: "",
+    treatment_plan: "",
+    notes: "",
+    vital_signs: {
+      blood_pressure: "",
+      heart_rate: "",
+      temperature: "",
+      weight: "",
+    },
+    prescriptions: [] as any[],
+  });
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <LoadingSpinner />
+      </DashboardLayout>
+    );
+  }
+
+  if (!patientData) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-8">Patient not found</div>
+      </DashboardLayout>
+    );
+  }
+
+  const patient = patientData.patient;
+
+  const handleSave = async () => {
+    try {
+      await createConsultation.mutateAsync({
+        patient_id: patient.id,
+        ...formData,
+        chief_complaint: formData.chief_complaint,
+        examination: formData.symptoms,
+        diagnosis: formData.diagnosis,
+        treatment: formData.treatment_plan,
+        prescription: formData.prescriptions.length > 0 ? formData.prescriptions : null,
+        notes: formData.notes,
+      });
+      toast({
+        title: "Success",
+        description: "Consultation saved successfully",
+      });
+      setShowFinishDialog(false);
+      setLocation("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save consultation",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -25,7 +96,7 @@ export default function ConsultationView() {
         {/* Header */}
         <div className="flex items-center justify-between border-b pb-4">
           <div className="flex items-center gap-4">
-            <Link href="/patients/P001">
+            <Link href={`/patients/${patient.id}`}>
               <Button variant="ghost" size="icon">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -33,21 +104,23 @@ export default function ConsultationView() {
             <div>
               <h2 className="text-xl font-bold tracking-tight">New Consultation</h2>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{patient.name}</span>
+                <span>{patient.full_name}</span>
                 <span>&middot;</span>
-                <span>{patient.age}y {patient.gender}</span>
+                <span>{patient.gender}</span>
               </div>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
-              <History className="mr-2 h-4 w-4" />
-              History
-            </Button>
+            <Link href={`/patients/${patient.id}`}>
+              <Button variant="outline">
+                <History className="mr-2 h-4 w-4" />
+                History
+              </Button>
+            </Link>
             
-            <Button onClick={() => setShowFinishDialog(true)}>
+            <Button onClick={() => setShowFinishDialog(true)} disabled={createConsultation.isPending}>
               <Save className="mr-2 h-4 w-4" />
-              Finish & Save
+              {createConsultation.isPending ? "Saving..." : "Finish & Save"}
             </Button>
           </div>
         </div>
@@ -63,19 +136,47 @@ export default function ConsultationView() {
               <CardContent className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Blood Pressure</Label>
-                  <Input placeholder="120/80" />
+                  <Input
+                    placeholder="120/80"
+                    value={formData.vital_signs.blood_pressure}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      vital_signs: { ...formData.vital_signs, blood_pressure: e.target.value }
+                    })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Heart Rate</Label>
-                  <Input placeholder="72" />
+                  <Input
+                    placeholder="72"
+                    value={formData.vital_signs.heart_rate}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      vital_signs: { ...formData.vital_signs, heart_rate: e.target.value }
+                    })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Temp (C)</Label>
-                  <Input placeholder="36.6" />
+                  <Input
+                    placeholder="36.6"
+                    value={formData.vital_signs.temperature}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      vital_signs: { ...formData.vital_signs, temperature: e.target.value }
+                    })}
+                  />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Weight (kg)</Label>
-                  <Input placeholder="75" />
+                  <Input
+                    placeholder="75"
+                    value={formData.vital_signs.weight}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      vital_signs: { ...formData.vital_signs, weight: e.target.value }
+                    })}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -87,7 +188,9 @@ export default function ConsultationView() {
               <CardContent>
                 <Textarea 
                   className="min-h-[150px] resize-none border-0 p-0 focus-visible:ring-0" 
-                  placeholder="Patient complains of..." 
+                  placeholder="Patient complains of..."
+                  value={formData.chief_complaint}
+                  onChange={(e) => setFormData({ ...formData, chief_complaint: e.target.value })}
                 />
               </CardContent>
             </Card>
@@ -100,15 +203,11 @@ export default function ConsultationView() {
                 <CardTitle className="text-sm">Diagnosis</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                   <Input placeholder="Search ICD-10 codes or type diagnosis..." className="flex-1" />
-                   <Button variant="secondary">Add</Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="px-3 py-1 text-sm flex gap-2 items-center">
-                    Acute Bronchitis <span className="text-muted-foreground cursor-pointer hover:text-foreground">×</span>
-                  </Badge>
-                </div>
+                <Textarea
+                  placeholder="Enter diagnosis..."
+                  value={formData.diagnosis}
+                  onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
+                />
               </CardContent>
             </Card>
 
@@ -122,52 +221,21 @@ export default function ConsultationView() {
               </CardHeader>
               <CardContent className="space-y-6">
                  <div className="space-y-3">
-                    <Label>Medications</Label>
-                    <div className="grid grid-cols-12 gap-2">
-                      <div className="col-span-5">
-                         <Input placeholder="Drug Name" />
-                      </div>
-                      <div className="col-span-3">
-                         <Input placeholder="Dosage" />
-                      </div>
-                       <div className="col-span-3">
-                         <Input placeholder="Frequency" />
-                      </div>
-                      <div className="col-span-1">
-                        <Button size="icon" variant="ghost"><Plus className="h-4 w-4" /></Button>
-                      </div>
-                    </div>
-                    <div className="rounded-md border p-3 bg-muted/20 text-sm">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Augmentin 1g</span>
-                        <span className="text-muted-foreground">1 tablet every 12 hours for 7 days</span>
-                      </div>
-                    </div>
+                    <Label>Treatment Plan</Label>
+                    <Textarea
+                      placeholder="Treatment plan and medications..."
+                      value={formData.treatment_plan}
+                      onChange={(e) => setFormData({ ...formData, treatment_plan: e.target.value })}
+                    />
                  </div>
 
                  <div className="space-y-3">
                     <Label>Notes / Instructions</Label>
-                    <Textarea placeholder="Rest, drink fluids..." />
-                 </div>
-                 
-                 <div className="space-y-3 pt-4 border-t">
-                    <Label>Follow Up</Label>
-                    <div className="flex gap-4">
-                      <Select>
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Select duration" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 Week</SelectItem>
-                          <SelectItem value="2">2 Weeks</SelectItem>
-                          <SelectItem value="4">1 Month</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <input type="checkbox" id="reminder" className="rounded border-gray-300" defaultChecked />
-                        <label htmlFor="reminder">Send SMS Reminder</label>
-                      </div>
-                    </div>
+                    <Textarea
+                      placeholder="Rest, drink fluids..."
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    />
                  </div>
               </CardContent>
             </Card>
@@ -187,20 +255,18 @@ export default function ConsultationView() {
            <div className="bg-muted/30 p-4 rounded-lg space-y-2 text-sm">
              <div className="flex justify-between">
                <span className="text-muted-foreground">Patient:</span>
-               <span className="font-medium">{patient.name}</span>
+               <span className="font-medium">{patient.full_name}</span>
              </div>
              <div className="flex justify-between">
                <span className="text-muted-foreground">Diagnosis:</span>
-               <span className="font-medium">Acute Bronchitis</span>
-             </div>
-             <div className="flex justify-between">
-               <span className="text-muted-foreground">Prescription:</span>
-               <span className="font-medium">1 Item</span>
+               <span className="font-medium">{formData.diagnosis || "Not specified"}</span>
              </div>
            </div>
            <DialogFooter>
              <Button variant="outline" onClick={() => setShowFinishDialog(false)}>Cancel</Button>
-             <Button onClick={() => setLocation("/dashboard")}>Confirm & Save</Button>
+             <Button onClick={handleSave} disabled={createConsultation.isPending}>
+               {createConsultation.isPending ? "Saving..." : "Confirm & Save"}
+             </Button>
            </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -211,32 +277,31 @@ export default function ConsultationView() {
            <div className="border p-8 bg-white text-black space-y-6">
               <div className="flex justify-between items-center border-b pb-4">
                  <div>
-                   <h1 className="text-xl font-bold">SmartCare Clinic</h1>
-                   <p className="text-sm text-gray-500">Dr. Sarah Smith</p>
+                   <h1 className="text-xl font-bold">Marktology OS</h1>
+                   <p className="text-sm text-gray-500">{user?.full_name}</p>
                  </div>
                  <div className="text-right text-sm">
                    <p>Date: {new Date().toLocaleDateString()}</p>
-                   <p>Rx ID: #88392</p>
                  </div>
               </div>
               
               <div className="space-y-2">
                  <h3 className="font-bold border-b w-full pb-1 mb-2">Patient Details</h3>
-                 <p>Name: {patient.name}</p>
-                 <p>Age: {patient.age} years</p>
+                 <p>Name: {patient.full_name}</p>
+                 <p>Gender: {patient.gender}</p>
               </div>
 
               <div className="space-y-4 min-h-[200px]">
-                 <h3 className="font-bold text-xl">Rx</h3>
+                 <h3 className="font-bold text-xl">Prescription</h3>
                  <div className="ml-4">
-                    <p className="font-bold">Augmentin 1g</p>
-                    <p className="text-sm">1 tablet every 12 hours for 7 days</p>
+                    <p className="font-bold">Diagnosis: {formData.diagnosis}</p>
+                    <p className="text-sm mt-2">{formData.treatment_plan}</p>
                  </div>
               </div>
 
                <div className="pt-8 border-t flex justify-between items-end">
                  <div className="text-xs text-gray-400">
-                   Generated by SmartCare Systems
+                   Generated by Marktology OS
                  </div>
                  <div className="border-t border-black w-40 text-center pt-1">
                    Doctor's Signature
@@ -250,24 +315,4 @@ export default function ConsultationView() {
       </Dialog>
     </DashboardLayout>
   );
-}
-
-function Plus({ className }: { className?: string }) {
-  return (
-    <svg 
-      className={className}
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-    >
-      <path d="M5 12h14" />
-      <path d="M12 5v14" />
-    </svg>
-  )
 }

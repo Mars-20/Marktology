@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Plus, Search, Calendar, Users, FileText, Settings, Bell, LogOut, LayoutDashboard, Stethoscope, Activity, ArrowRightLeft, UserCog } from "lucide-react";
+import { Calendar, Users, FileText, Settings, Bell, LogOut, LayoutDashboard, Stethoscope, ArrowRightLeft, UserCog } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import logoUrl from "@assets/generated_images/minimalist_medical_cross_logo_with_clean_lines.png";
+import { Badge } from "@/components/ui/badge";
+import logoUrl from "@assets/marktology-logo.png";
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -24,8 +25,8 @@ export function Sidebar() {
     <div className="flex h-screen w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-6">
         <div className="flex items-center gap-2 font-display font-bold text-xl text-primary">
-          <img src={logoUrl} alt="SmartCare Logo" className="h-8 w-8 rounded-md object-cover" />
-          <span>SmartCare</span>
+          <img src={logoUrl} alt="Marktology OS Logo" className="h-8 w-8 rounded-md object-cover" />
+          <span>Marktology OS</span>
         </div>
       </div>
       

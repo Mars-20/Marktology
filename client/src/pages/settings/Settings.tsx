@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, Trash2 } from "lucide-react";
 
 export default function Settings() {
@@ -34,7 +34,7 @@ export default function Settings() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="clinic-name">Clinic Name</Label>
-                    <Input id="clinic-name" defaultValue="SmartCare Clinics" />
+                    <Input id="clinic-name" defaultValue="Marktology Clinics" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="specialty">Primary Specialty</Label>
@@ -52,7 +52,7 @@ export default function Settings() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Contact Email</Label>
-                    <Input id="email" defaultValue="contact@smartcare.com" />
+                    <Input id="email" defaultValue="contact@marktology.com" />
                   </div>
                 </div>
               </CardContent>
@@ -73,9 +73,9 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                  {[
-                   { name: "Dr. Sarah Smith", role: "Doctor (Admin)", email: "sarah@smartcare.com" },
-                   { name: "Nurse John", role: "Nurse", email: "john@smartcare.com" },
-                   { name: "Mona Reception", role: "Receptionist", email: "mona@smartcare.com" },
+                   { name: "Dr. Sarah Smith", role: "Doctor (Admin)", email: "sarah@marktology.com" },
+                   { name: "Nurse John", role: "Nurse", email: "john@marktology.com" },
+                   { name: "Mona Reception", role: "Receptionist", email: "mona@marktology.com" },
                  ].map((staff, i) => (
                    <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
