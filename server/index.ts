@@ -1,3 +1,4 @@
+import express, { Request, Response, NextFunction } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import cors from "cors";
@@ -41,7 +42,7 @@ app.use(cors({
 // Request logging (skip in test environment)
 if (config.NODE_ENV !== 'test') {
   app.use(morgan(config.NODE_ENV === 'production' ? 'combined' : 'dev', {
-    skip: (req) => req.url.startsWith('/assets') || req.url.startsWith('/public'),
+    skip: (req) => req.url?.startsWith('/assets') || req.url?.startsWith('/public'),
   }));
 }
 
@@ -85,7 +86,7 @@ if (config.DATABASE_URL) {
 
 app.use(
   express.json({
-    verify: (req, _res, buf) => {
+    verify: (req: Request, _res: Response, buf: Buffer) => {
       req.rawBody = buf;
     },
     limit: '10mb',
@@ -117,15 +118,15 @@ export function log(message: string, source = "express") {
 }
 
 // Custom request logger
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
+  const originalResJson = res.json.bind(res);
+  res.json = function (bodyJson: any) {
     capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
+    return originalResJson(bodyJson);
   };
 
   res.on("finish", () => {

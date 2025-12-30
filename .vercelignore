@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Testing
+coverage/
+*.test.ts
+*.test.tsx
+__tests__/
+
+# Development
+.env.local
+.env.development
+*.log
+
+# Build artifacts (will be rebuilt)
+.vite/
+.cache/
+
+# Documentation (not needed in deployment)
+*.md
+!README.md
+docs/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Misc
+.replit
+.windsurf/
+.local/
+attached_assets/

@@ -18,7 +18,8 @@ import {
   Pill,
   AlertCircle,
   MessageSquare,
-  Clock
+  Clock,
+  Upload
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";

@@ -192,8 +192,7 @@ export function registerMVPRoutes(app: Express) {
     }
     
     const stats = await mvpStorage.getDoctorDashboardStats(
-      doctor_id as string,
-      clinic_id as string
+      doctor_id as string
     );
     
     res.json(stats);
